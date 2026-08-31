@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Things to do</title>
+<meta name="description" content="A quiet, single-page to-do list.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stone:      #EDEEE9;
+    --paper:      #F6F7F3;
+    --ink:        #1C2321;
+    --ink-soft:   #5F6864;
+    --rule:       #D8DAD2;
+    --pine:       #2E6E5B;
+    --pine-tint:  #E2ECE7;
+    --clay:       #9C4B3C;
+    --radius:     3px;
+    --step:       clamp(1rem, 0.6rem + 1.2vw, 1.4rem);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ -webkit-text-size-adjust: 100%; }
+
+  body{
+    margin: 0;
+    min-height: 100vh;
+    background: var(--stone);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+    padding: clamp(2rem, 7vh, 6rem) 1.25rem 4rem;
+  }
+
+  .sheet{
+    width: 100%;
+    max-width: 40rem;
+  }
+
+  /* ---------- header ---------- */
+
+  .date{
+    margin: 0 0 0.35rem;
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    letter-spacing: 0.01em;
+  }
+
+  h1{
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: clamp(2.4rem, 1.6rem + 3.4vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin: 0 0 1.5rem;
+  }
+
+  .meter{
+    position: relative;
+    height: 2px;
+    background: var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .meter span{
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: var(--pine);
+    transition: width 380ms cubic-bezier(.2,.7,.3,1);
+  }
+
+  .tally{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-top: 0.6rem;
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- compose ---------- */
+
+  .compose{
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 2.25rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1.5px solid var(--ink);
+  }
+
+  .compose input{
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 1.0625rem;
+    color: var(--ink);
+    padding: 0.2rem 0;
+  }
+
+  .compose input::placeholder{ color: var(--ink-soft); opacity: 0.8; }
+  .compose input:focus{ outline: none; }
+  .compose:focus-within{ border-bottom-color: var(--pine); }
+
+  .add{
+    flex: none;
+    border: 0;
+    background: var(--ink);
+    color: var(--paper);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    padding: 0.45rem 1.05rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 160ms ease;
+  }
+
+  .add:hover{ background: var(--pine); }
+  .add:disabled{ opacity: 0.35; cursor: default; background: var(--ink); }
+
+  /* ---------- filters ---------- */
+
+  .views{
+    display: flex;
+    gap: 1.4rem;
+    margin: 1.9rem 0 0.4rem;
+  }
+
+  .views button{
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.9375rem;
+    color: var(--ink-soft);
+    padding: 0.15rem 0;
+    cursor: pointer;
+    border-bottom: 1.5px solid transparent;
+  }
+
+  .views button:hover{ color: var(--ink); }
+
+  .views button[aria-pressed="true"]{
+    color: var(--ink);
+    font-weight: 500;
+    border-bottom-color: var(--pine);
+  }
+
+  /* ---------- list ---------- */
+
+  ul{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li{
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tick{
+    flex: none;
+    margin-top: 0.1rem;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: border-color 160ms ease, background 160ms ease;
+  }
+
+  .tick:hover{ border-color: var(--pine); }
+
+  .tick svg{
+    width: 12px;
+    height: 12px;
+    stroke: var(--paper);
+    stroke-width: 2.4;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    transition: stroke-dashoffset 240ms ease 60ms;
+  }
+
+  li.done .tick{
+    background: var(--pine);
+    border-color: var(--pine);
+  }
+
+  li.done .tick svg{ stroke-dashoffset: 0; }
+
+  .label{
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    cursor: text;
+    word-break: break-word;
+    padding: 0.05rem 0;
+    color: var(--ink);
+    transition: color 240ms ease;
+  }
+
+  .label::after{
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.85em;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 260ms cubic-bezier(.2,.7,.3,1);
+  }
+
+  li.done .label{ color: var(--ink-soft); }
+  li.done .label::after{ transform: scaleX(1); }
+
+  .label input{
+    width: 100%;
+    border: 0;
+    border-bottom: 1.5px solid var(--pine);
+    background: none;
+    font: inherit;
+    color: var(--ink);
+    padding: 0 0 0.15rem;
+  }
+
+  .label input:focus{ outline: none; }
+
+  .remove{
+    flex: none;
+    border: 0;
+    background: none;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 1.05rem;
+    line-height: 1;
+    padding: 0.25rem 0.4rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 140ms ease, color 140ms ease;
+  }
+
+  li:hover .remove,
+  .remove:focus-visible{ opacity: 1; }
+
+  .remove:hover{ color: var(--clay); }
+
+  /* ---------- empty + footer ---------- */
+
+  .empty{
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 1.125rem;
+    font-style: italic;
+    color: var(--ink-soft);
+    padding: 2.5rem 0;
+    margin: 0;
+  }
+
+  .sweep{
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    padding: 0;
+    cursor: pointer;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .sweep:hover{ color: var(--clay); border-bottom-color: var(--clay); }
+  .sweep[hidden]{ display: none; }
+
+  footer{
+    margin-top: 1.6rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .note{
+    margin: 2.5rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+  }
+
+  .note[hidden]{ display: none; }
+
+  :focus-visible{
+    outline: 2px solid var(--pine);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  }
+
+  @media (max-width: 30rem){
+    .remove{ opacity: 1; }
+    .add{ padding: 0.45rem 0.85rem; }
+  }
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <p class="date" id="date"></p>
+  <h1>Things to do</h1>
+
+  <div class="meter" role="presentation"><span id="fill"></span></div>
+  <div class="tally">
+    <span id="count">Nothing on the list</span>
+    <button class="sweep" id="sweep" hidden>Clear done</button>
+  </div>
+
+  <div class="compose">
+    <input id="entry" type="text" placeholder="Write a task, then press enter" autocomplete="off" aria-label="New task">
+    <button class="add" id="add" disabled>Add</button>
+  </div>
+
+  <div class="views" role="group" aria-label="Filter tasks">
+    <button data-view="all" aria-pressed="true">All</button>
+    <button data-view="open" aria-pressed="false">Open</button>
+    <button data-view="done" aria-pressed="false">Done</button>
+  </div>
+
+  <ul id="list"></ul>
+  <p class="empty" id="empty" hidden></p>
+
+  <footer></footer>
+  <p class="note" id="note" hidden>Saving is switched off in this preview, so tasks reset on reload. It works normally once the page is hosted.</p>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "things-to-do";
+
+  /* Storage that quietly falls back to memory when the browser blocks it. */
+  var store = (function () {
+    var memory = null;
+    try {
+      window.localStorage.setItem(KEY + ":test", "1");
+      window.localStorage.removeItem(KEY + ":test");
+    } catch (e) {
+      memory = [];
+    }
+    return {
+      available: memory === null,
+      read: function () {
+        if (memory) return memory;
+        try {
+          var raw = window.localStorage.getItem(KEY);
+          var parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          return [];
+        }
+      },
+      write: function (value) {
+        if (memory) { memory = value; return; }
+        try {
+          window.localStorage.setItem(KEY, JSON.stringify(value));
+        } catch (e) {
+          memory = value;
+        }
+      }
+    };
+  }());
+
+  var tasks = store.read();
+  var view = "all";
+  var editingId = null;
+
+  var list    = document.getElementById("list");
+  var empty   = document.getElementById("empty");
+  var entry   = document.getElementById("entry");
+  var addBtn  = document.getElementById("add");
+  var sweep   = document.getElementById("sweep");
+  var count   = document.getElementById("count");
+  var fill    = document.getElementById("fill");
+  var views   = document.querySelectorAll(".views button");
+
+  document.getElementById("date").textContent =
+    new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+
+  document.getElementById("note").hidden = store.available;
+
+  function save() { store.write(tasks); }
+
+  function visible() {
+    if (view === "open") return tasks.filter(function (t) { return !t.done; });
+    if (view === "done") return tasks.filter(function (t) { return t.done; });
+    return tasks;
+  }
+
+  function emptyMessage() {
+    if (view === "open") return tasks.length ? "Everything here is done." : "Nothing on the list yet. Add the first thing above.";
+    if (view === "done") return "Nothing finished yet.";
+    return "Nothing on the list yet. Add the first thing above.";
+  }
+
+  function summary() {
+    var total = tasks.length;
+    var done  = tasks.filter(function (t) { return t.done; }).length;
+
+    fill.style.width = total ? (done / total * 100) + "%" : "0%";
+    sweep.hidden = done === 0;
+
+    if (!total) { count.textContent = "Nothing on the list"; return; }
+    if (done === total) { count.textContent = total === 1 ? "The one task is done" : "All " + total + " done"; return; }
+    count.textContent = done + " of " + total + " done";
+  }
+
+  function makeRow(task) {
+    var li = document.createElement("li");
+    li.className = task.done ? "done" : "";
+    li.dataset.id = task.id;
+
+    var tick = document.createElement("button");
+    tick.className = "tick";
+    tick.type = "button";
+    tick.setAttribute("aria-pressed", task.done ? "true" : "false");
+    tick.setAttribute("aria-label", (task.done ? "Mark as not done: " : "Mark as done: ") + task.text);
+    tick.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><polyline points="2,7.5 5.5,11 12,3.5"></polyline></svg>';
+    tick.addEventListener("click", function () {
+      task.done = !task.done;
+      save();
+      render();
+    });
+
+    var label = document.createElement("div");
+    label.className = "label";
+
+    if (editingId === task.id) {
+      var field = document.createElement("input");
+      field.type = "text";
+      field.value = task.text;
+      field.setAttribute("aria-label", "Edit task");
+      label.appendChild(field);
+
+      var commit = function () {
+        var next = field.value.trim();
+        if (next) { task.text = next; save(); }
+        editingId = null;
+        render();
+        entry.focus();
+      };
+
+      field.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { commit(); }
+        if (e.key === "Escape") { editingId = null; render(); entry.focus(); }
+      });
+      field.addEventListener("blur", commit);
+
+      window.requestAnimationFrame(function () {
+        field.focus();
+        field.setSelectionRange(field.value.length, field.value.length);
+      });
+    } else {
+      label.textContent = task.text;
+      label.title = "Double-click to edit";
+      label.addEventListener("dblclick", function () {
+        editingId = task.id;
+        render();
+      });
+    }
+
+    var remove = document.createElement("button");
+    remove.className = "remove";
+    remove.type = "button";
+    remove.innerHTML = "&times;";
+    remove.setAttribute("aria-label", "Delete task: " + task.text);
+    remove.addEventListener("click", function () {
+      tasks = tasks.filter(function (t) { return t.id !== task.id; });
+      save();
+      render();
+    });
+
+    li.appendChild(tick);
+    li.appendChild(label);
+    li.appendChild(remove);
+    return li;
+  }
+
+  function render() {
+    var rows = visible();
+    var frag = document.createDocumentFragment();
+
+    rows.forEach(function (task) { frag.appendChild(makeRow(task)); });
+
+    list.innerHTML = "";
+    list.appendChild(frag);
+
+    empty.hidden = rows.length > 0;
+    if (!rows.length) empty.textContent = emptyMessage();
+
+    summary();
+  }
+
+  function add() {
+    var text = entry.value.trim();
+    if (!text) return;
+    tasks.unshift({ id: String(Date.now()) + Math.random().toString(16).slice(2), text: text, done: false });
+    entry.value = "";
+    addBtn.disabled = true;
+    save();
+    render();
+    entry.focus();
+  }
+
+  entry.addEventListener("input", function () { addBtn.disabled = entry.value.trim() === ""; });
+  entry.addEventListener("keydown", function (e) { if (e.key === "Enter") add(); });
+  addBtn.addEventListener("click", add);
+
+  sweep.addEventListener("click", function () {
+    tasks = tasks.filter(function (t) { return !t.done; });
+    save();
+    render();
+    entry.focus();
+  });
+
+  Array.prototype.forEach.call(views, function (btn) {
+    btn.addEventListener("click", function () {
+      view = btn.dataset.view;
+      Array.prototype.forEach.call(views, function (b) {
+        b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+      });
+      editingId = null;
+      render();
+    });
+  });
+
+  render();
+  entry.focus();
+}());
+</script>
+</body>
+</html>
