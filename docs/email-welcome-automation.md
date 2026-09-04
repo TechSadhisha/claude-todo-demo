@@ -6,9 +6,10 @@ business inbox.
 - **Where it runs:** n8n, workflow `Sadhisha Homes — Inbox Welcome Responder`
   (id `E4SQSnwTbmimqarD`), in the `Sadhisha` personal project.
 - **Status:** published and active.
-- **Credential:** the existing `Gmail account` OAuth2 credential (`tSt6kBlHMrpMBGZm`).
-  The reply is sent from whichever Gmail account that credential is authorised for,
-  with the display name `Sadhisha Homes`.
+- **Credential:** the existing `Gmail account` OAuth2 credential (`tSt6kBlHMrpMBGZm`),
+  confirmed to be authorised for `amazonbipin@gmail.com` via Gmail's
+  `users/me/profile` endpoint. Replies are sent from that address with the display
+  name `Sadhisha Homes`.
 
 ## Message sent
 
@@ -65,8 +66,18 @@ anything.
 
 ## Things to check
 
-- Confirm which Gmail account the `Gmail account` credential is authorised for. The
-  n8n project belongs to `tech.sadhisha@gmail.com`, so if replies should come from
-  `amazonbipin@gmail.com`, verify that before relying on it.
-- The first few live replies are worth reading, to confirm no automated sender slips
-  past the filters. Any that does should be added to the Filter node.
+The first few live replies are worth reading, to confirm no automated sender slips
+past the filters. Any that does should be added to the Filter node.
+
+## Verifying the sending account
+
+The n8n project is owned by `tech.sadhisha@gmail.com` while the mail must go out from
+`amazonbipin@gmail.com`, so the credential's identity is worth re-checking after any
+credential is reconnected. n8n never exposes which account an OAuth credential holds,
+but Gmail will report it:
+
+Create a throwaway workflow with a Schedule Trigger feeding an HTTP Request node —
+`GET https://gmail.googleapis.com/gmail/v1/users/me/profile`, authentication set to
+`predefinedCredentialType`, credential type `gmailOAuth2`, using the credential in
+question. Run it manually; the response's `emailAddress` is the authorised mailbox.
+Archive the throwaway workflow afterwards.
